@@ -28,4 +28,5 @@ class NoopWindowRootViewBlurRepository @Inject constructor() : WindowRootViewBlu
     override val isLockscreenTranslucentSupported: StateFlow<Boolean> = MutableStateFlow(false)
     override var blurAppliedListener: BlurAppliedListener? = null
     override val trackingShadeMotion: MutableStateFlow<Boolean> = MutableStateFlow(false)
+    override fun recommendedBlurScale(): Float = 1.0f
 }

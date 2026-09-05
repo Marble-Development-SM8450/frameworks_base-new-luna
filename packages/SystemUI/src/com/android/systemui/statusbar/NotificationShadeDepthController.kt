@@ -122,6 +122,9 @@ constructor(
     private var updateScheduled: Boolean = false
     private var lastRequestedBlurRadius: Int = -1
     private var lastRequestedZoomOutRadius: Float = -1f
+    private var blurUpdatePending: Boolean = false
+    private var pendingBlurRadius: Int = 0
+    private var pendingZoomOutRadius: Float = 0.0f
     private var lastAppliedBlurTuple: Triple<Int, Boolean, Float>? = null
     private var lastAppliedBlurVri: ViewRootImpl? = null
     @VisibleForTesting var shadeExpansion = 0f
@@ -723,18 +726,28 @@ constructor(
 
         if (Flags.bouncerUiRevamp() || Flags.glanceableHubBlurredBackground()) {
             if (windowRootViewBlurInteractor.isBlurCurrentlySupported.value) {
-                if (Math.abs(blur - lastRequestedBlurRadius) < MIN_BLUR_RADIUS_DELTA_PX &&
-                    zoomOutFromShadeRadius == lastRequestedZoomOutRadius) {
-                    return
+                pendingBlurRadius = blur
+                pendingZoomOutRadius = zoomOutFromShadeRadius
+                if (!blurUpdatePending) {
+                    blurUpdatePending = true
+                    choreographer.postFrameCallback {
+                        blurUpdatePending = false
+                        val latestBlur = pendingBlurRadius
+                        val latestZoomOut = pendingZoomOutRadius
+                        if (Math.abs(latestBlur - lastRequestedBlurRadius) < MIN_BLUR_RADIUS_DELTA_PX &&
+                            latestZoomOut == lastRequestedZoomOutRadius) {
+                            return@postFrameCallback
+                        }
+                        updateScheduled =
+                            windowRootViewBlurInteractor.requestBlurForShade(
+                                latestBlur,
+                                zoomOutAsScale(latestZoomOut) *
+                                    windowRootViewBlurInteractor.recommendedBlurScale,
+                            )
+                        lastRequestedBlurRadius = latestBlur
+                        lastRequestedZoomOutRadius = latestZoomOut
+                    }
                 }
-                updateScheduled =
-                    windowRootViewBlurInteractor.requestBlurForShade(
-                        blur,
-                        zoomOutAsScale(zoomOutFromShadeRadius) *
-                            windowRootViewBlurInteractor.recommendedBlurScale,
-                    )
-                lastRequestedBlurRadius = blur
-                lastRequestedZoomOutRadius = zoomOutFromShadeRadius
                 return
             }
             // When blur is not supported, zoom out still needs to happen when scheduleUpdate
