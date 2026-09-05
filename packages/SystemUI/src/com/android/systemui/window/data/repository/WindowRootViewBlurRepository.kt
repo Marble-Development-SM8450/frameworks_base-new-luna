@@ -62,6 +62,8 @@ interface WindowRootViewBlurRepository {
     /** true when tracking shade motion that might lead to a shade expansion. */
     val trackingShadeMotion: MutableStateFlow<Boolean>
 
+    fun recommendedBlurScale(): Float
+
     companion object {
         /**
          * Whether the `persist.sysui.disableBlur` is set, this is used to disable blur for tests.
@@ -195,7 +197,11 @@ constructor(
     }
 
     private fun isBlurAllowed(): Boolean {
-        return ActivityManager.isHighEndGfx() && !isDisableBlurSysPropSet()
+        return !isDisableBlurSysPropSet()
+    }
+
+    override fun recommendedBlurScale(): Float {
+        return if (ActivityManager.isHighEndGfx()) 1.0f else 0.5f
     }
 
     companion object {

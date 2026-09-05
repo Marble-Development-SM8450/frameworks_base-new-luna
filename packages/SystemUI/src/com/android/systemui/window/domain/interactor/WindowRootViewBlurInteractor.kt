@@ -118,6 +118,9 @@ constructor(
      */
     val isTrackingShadeMotion: StateFlow<Boolean> = repository.trackingShadeMotion.asStateFlow()
 
+    val recommendedBlurScale: Float
+        get() = repository.recommendedBlurScale()
+
     /**
      * Requests blur to be applied on the window root view. It is applied only when other blurs are
      * not applied.

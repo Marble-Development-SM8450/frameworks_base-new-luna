@@ -110,6 +110,7 @@ constructor(
 
         private const val PUSHBACK_SCALE_FOR_APP = 0.025f
         private const val SHADE_BLUR_STEP_PX = 2
+        private const val MIN_BLUR_RADIUS_DELTA_PX = 2
         private const val SHADE_BLUR_SCALE_STEPS = 512f
 
         private const val TAG = "DepthController"
@@ -119,6 +120,8 @@ constructor(
     private var keyguardAnimator: Animator? = null
     private var notificationAnimator: Animator? = null
     private var updateScheduled: Boolean = false
+    private var lastRequestedBlurRadius: Int = -1
+    private var lastRequestedZoomOutRadius: Float = -1f
     private var lastAppliedBlurTuple: Triple<Int, Boolean, Float>? = null
     private var lastAppliedBlurVri: ViewRootImpl? = null
     @VisibleForTesting var shadeExpansion = 0f
@@ -720,11 +723,18 @@ constructor(
 
         if (Flags.bouncerUiRevamp() || Flags.glanceableHubBlurredBackground()) {
             if (windowRootViewBlurInteractor.isBlurCurrentlySupported.value) {
+                if (Math.abs(blur - lastRequestedBlurRadius) < MIN_BLUR_RADIUS_DELTA_PX &&
+                    zoomOutFromShadeRadius == lastRequestedZoomOutRadius) {
+                    return
+                }
                 updateScheduled =
                     windowRootViewBlurInteractor.requestBlurForShade(
                         blur,
-                        zoomOutAsScale(zoomOutFromShadeRadius),
+                        zoomOutAsScale(zoomOutFromShadeRadius) *
+                            windowRootViewBlurInteractor.recommendedBlurScale,
                     )
+                lastRequestedBlurRadius = blur
+                lastRequestedZoomOutRadius = zoomOutFromShadeRadius
                 return
             }
             // When blur is not supported, zoom out still needs to happen when scheduleUpdate
