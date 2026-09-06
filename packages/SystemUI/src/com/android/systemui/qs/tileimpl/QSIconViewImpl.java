@@ -48,7 +48,7 @@ import java.util.Objects;
 
 public class QSIconViewImpl extends QSIconView {
 
-    public static final long QS_ANIM_LENGTH = 350;
+    public static final long QS_ANIM_LENGTH = 220;
 
     private static final long ICON_APPLIED_TRANSACTION_ID = -1;
 
